@@ -48,15 +48,15 @@ struct Image {
 };
 
 Player player{
-	{300.0f,300.0f},
+	{600.0f,300.0f},
 	{0.0f,0.0f},
 	{0.0f,0.0f},
-	30.0f,
+	96.0f,
 };
 
-enum State {
-	SWIM,
-	JUMP
+enum PlayerState {
+	FLYINGRIGHT,
+	FLYINGLEFT
 };
 
 Vector2 ringRED[2]{
@@ -76,7 +76,7 @@ Vector2 ringORANGE[2]{
 
 struct Image background[2]{
 		{0.0f,0.0f },
-		{1280.0f,0.0f}
+		{0.0f,720.0f}
 };
 
 //シーン管理
@@ -135,7 +135,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
 	//画像の読み込み
 	//プレイヤーアニメーション
-	int playerSwim1 = Novice::LoadTexture("./Resources/images/swim1.png");
+	/*int playerSwim1 = Novice::LoadTexture("./Resources/images/swim1.png");
 	int playerSwim2 = Novice::LoadTexture("./Resources/images/swim2.png");
 	int playerSwim3 = Novice::LoadTexture("./Resources/images/swim3.png");
 	int playerSwim4 = Novice::LoadTexture("./Resources/images/swim4.png");
@@ -147,13 +147,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerJump4 = Novice::LoadTexture("./Resources/images/jump4.png");
 	int playerJump5 = Novice::LoadTexture("./Resources/images/jump5.png");
 	int playerJump6 = Novice::LoadTexture("./Resources/images/jump6.png");
-	int playerJump7 = Novice::LoadTexture("./Resources/images/jump7.png");
+	int playerJump7 = Novice::LoadTexture("./Resources/images/jump7.png");*/
+	int playerFlyRight1 = Novice::LoadTexture("./Resources/images/PlayerFlyRight1.png");
+	int playerFlyRight2 = Novice::LoadTexture("./Resources/images/PlayerFlyRight2.png");
+	int playerFlyLeft1 = Novice::LoadTexture("./Resources/images/PlayerFlyLeft1.png");
+	int playerFlyLeft2 = Novice::LoadTexture("./Resources/images/PlayerFlyLeft2.png");
 
 	//読み込んだ画像を配列に格納
-	int playerSwims[6]{ playerSwim1,playerSwim2,playerSwim3,playerSwim4,playerSwim5,playerSwim6 };
-	int platerJumps[7]{ playerJump1,playerJump2,playerJump3,playerJump4,playerJump5,playerJump6,playerJump7 };
-	int playerCurrentTexture = playerSwims[0]; //現在のプレイヤーの画像
-	int playerState = State::SWIM; //プレイヤーの向き 最初は泳いでいる
+	int playerFlyingRight[2]{ playerFlyRight1,playerFlyRight2 };
+	int playerFlyingLeft[2]{ playerFlyLeft1,playerFlyLeft2};
+	int playerCurrentTexture = playerFlyingRight[0]; //現在のプレイヤーの画像
+	int playerState = PlayerState::FLYINGRIGHT; //プレイヤーの向き 最初は泳いでいる
 	int freamCount = 0; //プレイヤーのアニメーション時間を計る変数
 //	int isPlayerMoving = 0; //プレイヤーが動いているか
 	int playerAnimationIndex = 0; //何個目の画像かを記憶する変数
@@ -165,7 +169,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int clearYellowHandle = Novice::LoadTexture("./Resources/images/clearYellow.png");
 	int introBlackHandle = Novice::LoadTexture("./Resources/images/introkuro.png");
 	int introYellowHandle = Novice::LoadTexture("./Resources/images/introkiiro.png");
-	int sea1 = Novice::LoadTexture("./Resources/images/sea.png");
+	int sky1 = Novice::LoadTexture("./Resources/images/sky1.png");
+	int sky2 = Novice::LoadTexture("./Resources/images/sky2.png");
 	int ringYellow1 = Novice::LoadTexture("./Resources/images/ring_yellow_1.png");
 	int ringYellow2 = Novice::LoadTexture("./Resources/images/ring_yellow_2.png");
 	int ringOrange1 = Novice::LoadTexture("./Resources/images/ring_orange_1.png");
@@ -325,11 +330,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				playerProgressX += 10;
 			}
 
-			if (playerState == State::SWIM) {
-				playerCurrentTexture = playerSwims[playerAnimationIndex];
+			if (playerState == PlayerState::FLYINGRIGHT) {
+				playerCurrentTexture = playerFlyingRight[playerAnimationIndex];
 			}
-			else if (playerState == State::JUMP) {
-				playerCurrentTexture = platerJumps[playerAnimationIndex];
+			else if (playerState == PlayerState::FLYINGLEFT) {
+				playerCurrentTexture = playerFlyingLeft[playerAnimationIndex];
 			}
 
 			/*if (keys[DIK_SPACE] && !preKeys[DIK_SPACE]) {
@@ -344,11 +349,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			///プレイヤーの移動
 			if (keys[DIK_LEFT]) {
 				player.position.x -= 10;
+				playerState = PlayerState::FLYINGLEFT;
 			}
 			if (player.position.x <=player.radius) {
 				player.position.x = player.radius;
 			}
 			if (keys[DIK_RIGHT]) {
+				playerState = PlayerState::FLYINGRIGHT;
 				player.position.x += 10;
 			}
 			if (player.position.x >=kWindowWidth-player.radius) {
@@ -358,7 +365,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			freamCount++;
 			if (freamCount % 10 == 0) { //7フレームおきに画像を更新する
 				playerAnimationIndex++; //画像の番号を1個進める
-				if (playerAnimationIndex > 5) {
+				if (playerAnimationIndex > 1) {
 					playerAnimationIndex = 0; //画像が最後まで来たら一番最初に戻す
 				}
 			}
@@ -368,7 +375,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				player.position.y = player.radius;
 			}
 
-			//screenY = (player.position.y - 500) * -1;
+			screenY = (player.position.y - 300) * -1;
 
 			if (gameTimer >= 1800) {
 				gameScene = RESULT;
@@ -545,8 +552,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		case PLAY:
 			//背景描画
-			Novice::DrawSprite(int(background[0].pos.x), int(background[0].pos.y), sea1, 1, 1, 0, WHITE);
-			Novice::DrawSprite(int(background[1].pos.x), int(background[1].pos.y), sea1, 1, 1, 0, WHITE);
+			Novice::DrawSprite(int(background[0].pos.x), int(background[0].pos.y), sky1, 1, 1, 0, WHITE);
+			Novice::DrawSprite(int(background[1].pos.x), int(background[1].pos.y), sky2, 1, 1, 0, WHITE);
 			if (gameTimer <= 120) {
 				Novice::DrawSprite(170, 190, spaceText, 1.8f, 1.8f, 0, WHITE);
 				Novice::DrawSprite(525, 200, deText, 1.4f, 1.4f, 0, WHITE);
@@ -554,7 +561,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 			Novice::DrawSprite(1000, 10, progress, 1, 1, 0.0f, WHITE);
-			Novice::DrawSprite(playerProgressX, playerProgressY, playerSwim6, 1.5, 1.5, 0.0f, WHITE);
+			Novice::DrawSprite(playerProgressX, playerProgressY, playerFlyLeft1, 0.5, 0.5, 0.0f, WHITE);
 			distance1 =
 				(int(screenY) - int(ringORANGE[0].y)) * (int(screenY) - int(ringORANGE[0].y)) +
 				(int(player.position.x - player.radius) - int(ringORANGE[0].x)) *
@@ -641,7 +648,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 			//自機
-			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 3, 3, 0.0f, WHITE);
+			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
 			Novice::ScreenPrintf(15, 15, "%f", player.position.y);
 			Novice::ScreenPrintf(15, 30, "%d", gameTimer);
 			Novice::ScreenPrintf(15, 45, "%d", playerState);
