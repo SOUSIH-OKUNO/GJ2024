@@ -8,7 +8,7 @@
 const char kWindowTitle[] = "GC1B_02_オクノ_ソウシ";
 const int kWindowWidth = 1280;
 const int kWindowHeight = 720;
-const float kEnemyRespawnPosY = 750.0f;
+const float kEnemyRespawnPosY = 2000.0f;
 const int kRingRedNums = 2;
 
 float Distance(float x1, float y1, float x2, float y2) {
@@ -40,8 +40,6 @@ struct Player {
 	Vector2 velocity;
 	Vector2 acceleration;
 	float radius;
-
-
 };
 struct Image {
 	Vector2 pos;
@@ -52,6 +50,14 @@ Player player{
 	{0.0f,0.0f},
 	{0.0f,0.0f},
 	96.0f,
+};
+
+Vector2 CloudRight{
+	0.0f,0.0f,0.0f
+};
+
+Vector2 CloudLeft{
+	0.0f,0.0f,0.0f
 };
 
 enum PlayerState {
@@ -79,21 +85,46 @@ struct Image background[2]{
 		{0.0f,720.0f}
 };
 
+Vector2 Parachute{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Backpack{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Boots{
+	0.0f,0.0f,64.0f
+};
+
+
 //シーン管理
 enum Plaing {
 	TITLE,
 	INTRO,
 	PLAY,
+	PUSH,
+	GEAR,
+	GAMEOVER,
 	RESULT,
 
 };
 
-int bgSpeed = 8;
-int ringSpeedX = 15;
+//各種速度
+int bgSpeed = 5;
+int ringSpeedX = 12;
+int itemSpeed = 12;
+
+
 int redRingCurrentNums = 2;
 int playerSwimCurrentNums = 10;
 float playerToRingRed[kRingRedNums] = { -1 };
 float scrollX = 0.0f;
+
+//アイテムの取得確認
+bool IsParachuteGet = false;
+bool IsBackpackGet = false;
+bool IsBootsGet = false;
 
 //各リングのヒット確認
 int isPlayerHitR = 0;
@@ -120,6 +151,11 @@ int ringAnimationTimer = 0;
 
 //タイマー管理
 int gameTimer = 0;
+int parachuteResTimer = 0;
+int backpackResTimer = 0;
+int bootsResTimer = 0;
+int spaceTimer = 0;
+int gearTimer = 0;
 
 //スコア管理
 int currentNumber = 0;
@@ -155,11 +191,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//読み込んだ画像を配列に格納
 	int playerFlyingRight[2]{ playerFlyRight1,playerFlyRight2 };
-	int playerFlyingLeft[2]{ playerFlyLeft1,playerFlyLeft2};
+	int playerFlyingLeft[2]{ playerFlyLeft1,playerFlyLeft2 };
 	int playerCurrentTexture = playerFlyingRight[0]; //現在のプレイヤーの画像
 	int playerState = PlayerState::FLYINGRIGHT; //プレイヤーの向き 最初は泳いでいる
 	int freamCount = 0; //プレイヤーのアニメーション時間を計る変数
-//	int isPlayerMoving = 0; //プレイヤーが動いているか
+	//	int isPlayerMoving = 0; //プレイヤーが動いているか
 	int playerAnimationIndex = 0; //何個目の画像かを記憶する変数
 
 	//画像管理
@@ -181,13 +217,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int redRingSheet = Novice::LoadTexture("./Resources/images/ring_red-sheet.png");
 	int yellowRingSheet = Novice::LoadTexture("./Resources/images/ring_yellow-sheet.png");
 	int progress = Novice::LoadTexture("./Resources/images/progress.png");
-	int spaceText = Novice::LoadTexture("./Resources/images/SPACE-Sheet.png");
-	int deText = Novice::LoadTexture("./Resources/images/de.png");
-	int jumpText = Novice::LoadTexture("./Resources/images/jumpText.png");
+	int startTxt = Novice::LoadTexture("./Resources/images/startTxt.png");
+	int cloudRight = Novice::LoadTexture("./Resources/images/cloudRight.png");
+	int cloudLeft = Novice::LoadTexture("./Resources/images/cloudLeft.png");
+	int bootsTxt = Novice::LoadTexture("./Resources/images/boots.png");
+	int backpackTxt = Novice::LoadTexture("./Resources/images/backpack.png");
+	int parachuteTxt = Novice::LoadTexture("./Resources/images/parachute.png");
+	int blackParachuteTxt = Novice::LoadTexture("./Resources/images/blackParachute.png");
+	int blackBackpackTxt = Novice::LoadTexture("./Resources/images/blackBackpack.png");
+	int blackBootsTxt = Novice::LoadTexture("./Resources/images/blackBoots.png");
+
+	int space1Txt = Novice::LoadTexture("./Resources/images/space1.png");
+	int space2Txt = Novice::LoadTexture("./Resources/images/space2.png");
+	int push=Novice::LoadTexture("./Resources/images/ose.png");
 
 	//効果音管理
+
 	int startAudioHandle = Novice::LoadAudio("./Resources/sounds/start.mp3");
-//	int jumpAudioHandle = Novice::LoadAudio("./Resources/sounds/jump.mp3");
+	//	int jumpAudioHandle = Novice::LoadAudio("./Resources/sounds/jump.mp3");
 	int effectSound1 = Novice::LoadAudio("./Resources/sounds/effectSound1.mp3");
 	int effectSound2 = Novice::LoadAudio("./Resources/sounds/effectSound2.mp3");
 	int effectSound3 = Novice::LoadAudio("./Resources/sounds/effectSound3.mp3");
@@ -209,7 +256,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int introTimer = 0;
 	int clearTimer = 0;
 	int resetTimer = 0;
-	float resetPosition = 300.0f;
+	float resetPosition = 600.0f;
 	float screenY = 0.0f;
 	int distance1 = 0;
 	int distance2 = 0;
@@ -227,12 +274,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int respawnOrange = 0;
 	int respawnYellow = 0;
 
+	float parachuteDistance = 0.0f;
+	float backpackDistance = 0.0f;
+	float bootsDistance = 0.0f;
+
 	player.acceleration.y = -2.0f;
 
 	//定数
 	const int kClearTimerLimit = 80;
 	const int kTitleTimerLimit = 80;
 	const int kIntroTimerLimit = 80;
+	const int kSpaceTimerLimit = 80;
 
 	//配列に格納
 	int ringOrange[2] = { ringOrange1,ringOrange2 };
@@ -247,7 +299,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char preKeys[256] = { 0 };
 
 	//スコア
-
 	int numberHandle[kNumberImageNum] = { 0 };
 	for (int i = 0; i < kNumberImageNum; i++) {
 		char numberStr[256];
@@ -288,13 +339,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		case TITLE:
 
-			//リング初期化
-			ringRED[0].x = 3500.0f;
-			ringRED[0].y = 100.0f;
-			ringYELLOW[0].x = 3950.0f;
-			ringYELLOW[0].y = 150.0f;
-			ringORANGE[0].x = 4350.0f;
-			ringORANGE[0].y = 200.0f;
+			//初期化
+			ringRED[0].x = 200.0f;
+			ringRED[0].y = 1500.0f;
+			ringYELLOW[0].x = 600.0f;
+			ringYELLOW[0].y = 2500.0f;
+			ringORANGE[0].x = 1000.0f;
+			ringORANGE[0].y = 3500.0f;
 			ringRCount = 0;
 			ringOCount = 0;
 			ringYCount = 0;
@@ -304,6 +355,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			respawnRed = 0;
 			respawnOrange = 0;
 			respawnYellow = 0;
+
+			CloudRight.x = kWindowWidth - 540;
+			CloudRight.y = -500;
+			CloudLeft.x = 0;
+			CloudLeft.y = -500;
+			//アイテムの初期化
+			Parachute.y = 2000;
+			Parachute.x = 300;
+			Backpack.y = 3000;
+			Backpack.x = 600;
+			Boots.y = 4000;
+			Boots.x = 900;
+
+
+			IsParachuteGet = false;
+			IsBackpackGet = false;
+			IsBootsGet = false;
+
 
 			Novice::StopAudio(playClearHandle);
 
@@ -348,18 +417,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}*/
 			///プレイヤーの移動
 			if (keys[DIK_LEFT]) {
-				player.position.x -= 10;
+				player.position.x -= 15;
 				playerState = PlayerState::FLYINGLEFT;
 			}
-			if (player.position.x <=player.radius) {
+			if (player.position.x <= player.radius) {
 				player.position.x = player.radius;
 			}
 			if (keys[DIK_RIGHT]) {
 				playerState = PlayerState::FLYINGRIGHT;
-				player.position.x += 10;
+				player.position.x += 15;
 			}
-			if (player.position.x >=kWindowWidth-player.radius) {
-				player.position.x = kWindowWidth - player.radius-player.radius;
+			if (player.position.x >= kWindowWidth - player.radius) {
+				player.position.x = kWindowWidth - player.radius - player.radius;
 			}
 
 			freamCount++;
@@ -377,9 +446,69 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			screenY = (player.position.y - 300) * -1;
 
-			if (gameTimer >= 1800) {
-				gameScene = RESULT;
+
+
+			//アイテムの移動
+
+			if (gameTimer >= 360) {
+				Parachute.y -= itemSpeed;
+				Backpack.y -= itemSpeed;
+				Boots.y -= itemSpeed;
+
+				if (Parachute.y <= -100 && IsParachuteGet == false) {
+					parachuteResTimer++;
+					if (parachuteResTimer >= 300) {
+						Parachute.y = 1000;
+						parachuteResTimer = 0;
+					}
+
+				}
+				if (Backpack.y <= -100 && IsBackpackGet == false) {
+					backpackResTimer++;
+					if (backpackResTimer >= 300) {
+						Backpack.y = 1000;
+						backpackResTimer = 0;
+					}
+
+				}
+				if (Boots.y <= -100 && IsBootsGet == false) {
+					bootsResTimer++;
+					if (bootsResTimer >= 300) {
+						Boots.y = 1000;
+						bootsResTimer = 0;
+					}
+
+				}
+
+
 			}
+
+			/*	Novice::ScreenPrintf(15, 15, "%f", Parachute.y);
+				Novice::ScreenPrintf(15, 30, "%d", IsParachuteGet);
+				Novice::ScreenPrintf(15, 45, "%f", Backpack.y);
+				Novice::ScreenPrintf(15, 60, "%d", IsBackpackGet);
+				Novice::ScreenPrintf(15, 75, "%f", Boots.y);
+				Novice::ScreenPrintf(15, 90, "%d", IsBootsGet);*/
+
+
+				//アイテムの当たり判定
+			parachuteDistance = Distance(player.position.x, player.position.y, Parachute.x, Parachute.y);
+			backpackDistance = Distance(player.position.x, player.position.y, Backpack.x, Backpack.y);
+			bootsDistance = Distance(player.position.x, player.position.y, Boots.x, Boots.y);
+
+			if (parachuteDistance <= player.radius + Parachute.radius) {
+				IsParachuteGet = true;
+				Parachute.y = -1000;
+			}
+			if (backpackDistance <= player.radius + Backpack.radius) {
+				IsBackpackGet = true;
+				Backpack.y = -1000;
+			}
+			if (bootsDistance <= player.radius + Boots.radius) {
+				IsBootsGet = true;
+				Boots.y = -1000;
+			}
+
 
 			//リングのアニメーション
 			saveTimer++;
@@ -415,32 +544,144 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (background[1].pos.y <= -kWindowHeight) {
 				background[1].pos.y = kWindowHeight;
 			}
+			//雲の移動処理
+			CloudRight.y -= 10;
+			if (CloudRight.y <= -500) {
+				CloudRight.y = 2000;
+			}
+
+			CloudLeft.y -= 10;
+			if (CloudLeft.y <= -500) {
+				CloudLeft.y = 1000;
+			}
 
 			//画面は端まで行ったら戻る処理
-			ringRED[0].y -= ringSpeedX;
+			if (gameTimer >= 240) {
+				ringRED[0].y -= ringSpeedX;
 
-			if (ringRED[0].y <= -100) {
-				ringRED[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-				ringRED[0].x = float(rand() % 1000 + 64);
-				respawnRed += 1;
+				if (ringRED[0].y <= -100) {
+					ringRED[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
+					ringRED[0].x = float(rand() % 1000 + 64);
+					respawnRed += 1;
+				}
+
+				ringORANGE[0].y -= ringSpeedX;
+
+				if (ringORANGE[0].y <= -100) {
+					ringORANGE[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
+					ringORANGE[0].x = float(rand() % 1000 + 64);
+					respawnOrange += 1;
+				}
+
+
+				ringYELLOW[0].y -= ringSpeedX;
+
+				if (ringYELLOW[0].y <= -100) {
+					ringYELLOW[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
+					ringYELLOW[0].x = float(rand() % 1000 + 64);
+					respawnYellow += 1;
+				}
+
 			}
 
-			ringORANGE[0].y -= ringSpeedX;
+			if (gameTimer >= 1800) {
+				if (IsParachuteGet == false || IsBackpackGet == false || IsBootsGet == false) {
+					gameScene = GAMEOVER;
+				}
+				else
+					gameScene = PUSH;
 
-			if (ringORANGE[0].y<= -100) {
-				ringORANGE[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-				ringORANGE[0].x = float(rand() % 1000 + 64);
-				respawnOrange += 1;
+			}
+			break;
+
+		case PUSH:
+			Novice::StopAudio(playTitleHandle);
+
+			gameTimer++;
+
+			if (gameTimer % 100 == 0) {
+				playerProgressX += 10;
+			}
+
+			if (playerState == PlayerState::FLYINGRIGHT) {
+				playerCurrentTexture = playerFlyingRight[playerAnimationIndex];
+			}
+			else if (playerState == PlayerState::FLYINGLEFT) {
+				playerCurrentTexture = playerFlyingLeft[playerAnimationIndex];
+			}
+
+			///プレイヤーの移動
+			if (keys[DIK_LEFT]) {
+				player.position.x -= 15;
+				playerState = PlayerState::FLYINGLEFT;
+			}
+			if (player.position.x <= player.radius) {
+				player.position.x = player.radius;
+			}
+			if (keys[DIK_RIGHT]) {
+				playerState = PlayerState::FLYINGRIGHT;
+				player.position.x += 15;
+			}
+			if (player.position.x >= kWindowWidth - player.radius) {
+				player.position.x = kWindowWidth - player.radius - player.radius;
+			}
+
+			freamCount++;
+			if (freamCount % 10 == 0) { //7フレームおきに画像を更新する
+				playerAnimationIndex++; //画像の番号を1個進める
+				if (playerAnimationIndex > 1) {
+					playerAnimationIndex = 0; //画像が最後まで来たら一番最初に戻す
+				}
+			}
+			player.velocity.y += player.acceleration.y;
+			player.position.y += player.velocity.y;
+			if (player.position.y <= player.radius) {
+				player.position.y = player.radius;
+			}
+
+			screenY = (player.position.y - 300) * -1;
+
+			//背景スクロール
+			background[0].pos.y -= bgSpeed;
+			if (background->pos.y <= -kWindowHeight) {
+				background->pos.y = kWindowHeight;
+			}
+			background[1].pos.y -= bgSpeed;
+			if (background[1].pos.y <= -kWindowHeight) {
+				background[1].pos.y = kWindowHeight;
 			}
 
 
-			ringYELLOW[0].y-= ringSpeedX;
-
-			if (ringYELLOW[0].y <= -100) {
-				ringYELLOW[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-				ringYELLOW[0].x = float(rand() % 1000 + 64);
-				respawnYellow += 1;
+			if (keys[DIK_SPACE] && !preKeys[DIK_SPACE]) {
+				gameScene = GEAR;
 			}
+
+
+			break;
+
+		case GEAR:
+			gearTimer++;
+			if (gearTimer >= 300) {
+				gearTimer = 0;
+				gameScene = RESULT;
+			}
+
+			break;
+
+		case GAMEOVER:
+
+			Novice::StopAudio(playPlayingHandle);
+
+			if (keys[DIK_RETURN] && !preKeys[DIK_RETURN]) {
+				playStartHandle = Novice::PlayAudio(startAudioHandle, false, 3.0f);
+				gameScene = TITLE;
+				gameTimer = resetTimer;
+				player.position.x = resetPosition;
+
+				playerProgressX = 990;
+				playerProgressY = 4;
+			}
+
 
 			break;
 
@@ -494,10 +735,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (isPlayerHitY == 1) {
 				Novice::PlayAudio(effectSound3, false, 1.0f);
 				isPlayerHitY = 0;
-
-
 			}
 
+
+			break;
+
+		case PUSH:
+
+			break;
+
+		case GEAR:
+			
+			break;
+		case GAMEOVER:
 
 			break;
 
@@ -554,14 +804,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//背景描画
 			Novice::DrawSprite(int(background[0].pos.x), int(background[0].pos.y), sky1, 1, 1, 0, WHITE);
 			Novice::DrawSprite(int(background[1].pos.x), int(background[1].pos.y), sky2, 1, 1, 0, WHITE);
-			if (gameTimer <= 120) {
-				Novice::DrawSprite(170, 190, spaceText, 1.8f, 1.8f, 0, WHITE);
-				Novice::DrawSprite(525, 200, deText, 1.4f, 1.4f, 0, WHITE);
-				Novice::DrawSprite(690, 205, jumpText, 1.6f, 1.6f, 0, WHITE);
+			if (gameTimer <= 180 && gameTimer % 30) {
+				Novice::DrawSprite(130, 250, startTxt, 1.6f, 1.6f, 0, WHITE);
 			}
 
 			Novice::DrawSprite(1000, 10, progress, 1, 1, 0.0f, WHITE);
 			Novice::DrawSprite(playerProgressX, playerProgressY, playerFlyLeft1, 0.5, 0.5, 0.0f, WHITE);
+
+
 			distance1 =
 				(int(screenY) - int(ringORANGE[0].y)) * (int(screenY) - int(ringORANGE[0].y)) +
 				(int(player.position.x - player.radius) - int(ringORANGE[0].x)) *
@@ -572,6 +822,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			distance3 = (int(screenY) - int(ringYELLOW[0].y)) * (int(screenY) - int(ringYELLOW[0].y)) +
 				(int(player.position.x - player.radius) - int(ringYELLOW[0].x)) *
 				(int(player.position.x - player.radius) - int(ringYELLOW[0].x));
+
+
 			if (distance1 <= (player.radius + 32) * (player.radius + 32)) {
 				isOrangeRing1Alive = 0;
 				isPlayerHitO = 1;
@@ -647,12 +899,73 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				YellowRingTime = 0;
 			}
 
+			//アイテム
+			if (IsParachuteGet == false) {
+				Novice::DrawSprite(int(Parachute.x - Parachute.radius), int(Parachute.y - Parachute.radius), parachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawSprite(50, 100, blackParachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			}
+
+			else
+				Novice::DrawSprite(50, 100, parachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+			if (IsBackpackGet == false) {
+				Novice::DrawSprite(int(Backpack.x - Backpack.radius), int(Backpack.y - Backpack.radius), backpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawSprite(50, 306, blackBackpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+			}
+
+			else
+				Novice::DrawSprite(50, 306, backpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+			if (IsBootsGet == false) {
+				Novice::DrawSprite(int(Boots.x - Boots.radius), int(Boots.y - Boots.radius), bootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawSprite(50, 562, blackBootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+			}
+
+			else
+				Novice::DrawSprite(50, 562, bootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+
+
 			//自機
 			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
-			Novice::ScreenPrintf(15, 15, "%f", player.position.y);
-			Novice::ScreenPrintf(15, 30, "%d", gameTimer);
-			Novice::ScreenPrintf(15, 45, "%d", playerState);
 
+			//雲
+			Novice::DrawSprite(int(CloudRight.x), int(CloudRight.y), cloudRight, 2.0f, 2.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(CloudLeft.x), int(CloudLeft.y), cloudLeft, 2.0f, 2.0f, 0.0f, WHITE);
+			break;
+
+		case PUSH:
+
+			Novice::ScreenPrintf(50, 50, "%d", gameScene);
+
+			//背景描画
+			Novice::DrawSprite(int(background[0].pos.x), int(background[0].pos.y), sky1, 1, 1, 0, WHITE);
+			Novice::DrawSprite(int(background[1].pos.x), int(background[1].pos.y), sky2, 1, 1, 0, WHITE);
+			//スペース
+			spaceTimer++;
+			if (spaceTimer == kSpaceTimerLimit)
+			{
+				spaceTimer = 0;
+			}
+			if (spaceTimer <= kSpaceTimerLimit / 2) {
+				Novice::DrawSprite(448, 250, space1Txt, 1, 1, 0, WHITE);
+			}
+			else if (spaceTimer <= kSpaceTimerLimit) {
+				Novice::DrawSprite(448, 250, space2Txt, 1, 1, 0, WHITE);
+			}
+			if (spaceTimer == kSpaceTimerLimit) {
+				spaceTimer = 0;
+			}
+			//自機
+			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
+
+			Novice::DrawSprite(448, 500, push, 1.0f, 1.0f, 0.0f, WHITE);
+
+			break;
+		case GEAR:
+			Novice::ScreenPrintf(50, 65, "%d", gameScene);
 			break;
 
 		case RESULT:
