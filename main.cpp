@@ -97,6 +97,21 @@ Vector2 Boots{
 	0.0f,0.0f,64.0f
 };
 
+Vector2 Kann{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Zenn{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Sou{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Bi{
+	0.0f,0.0f,64.0f
+};
 
 //シーン管理
 enum Plaing {
@@ -156,6 +171,11 @@ int backpackResTimer = 0;
 int bootsResTimer = 0;
 int spaceTimer = 0;
 int gearTimer = 0;
+int kannTimer = 0;
+int zennTimer = 0;
+int souTimer = 0;
+int biTimer = 0;
+
 
 //スコア管理
 int currentNumber = 0;
@@ -229,7 +249,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int space1Txt = Novice::LoadTexture("./Resources/images/space1.png");
 	int space2Txt = Novice::LoadTexture("./Resources/images/space2.png");
-	int push=Novice::LoadTexture("./Resources/images/ose.png");
+	int push = Novice::LoadTexture("./Resources/images/ose.png");
+	int kann = Novice::LoadTexture("./Resources/images/kann.png");
+	int zenn = Novice::LoadTexture("./Resources/images/zenn.png");
+	int sou = Novice::LoadTexture("./Resources/images/sou.png");
+	int bi = Novice::LoadTexture("./Resources/images/bi.png");
+	int gearBgTxt = Novice::LoadTexture("./Resources/images/gearBg.png");
+
 
 	//効果音管理
 
@@ -373,6 +399,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			IsBackpackGet = false;
 			IsBootsGet = false;
 
+			Kann.x = -128;
+			Kann.y = -128;
+			Zenn.x = 1408;
+			Zenn.y = -128;
+			Sou.x = -128;
+			Sou.y = 848;
+			Bi.x = 1408;
+			Bi.y = 848;
+
 
 			Novice::StopAudio(playClearHandle);
 
@@ -428,7 +463,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				player.position.x += 15;
 			}
 			if (player.position.x >= kWindowWidth - player.radius) {
-				player.position.x = kWindowWidth - player.radius - player.radius;
+				player.position.x = kWindowWidth - player.radius;
 			}
 
 			freamCount++;
@@ -652,6 +687,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 
+
 			if (keys[DIK_SPACE] && !preKeys[DIK_SPACE]) {
 				gameScene = GEAR;
 			}
@@ -661,9 +697,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		case GEAR:
 			gearTimer++;
+			kannTimer++;
+			zennTimer++;
+			souTimer++;
+			biTimer++;
+
 			if (gearTimer >= 300) {
 				gearTimer = 0;
 				gameScene = RESULT;
+			}
+
+			if (kannTimer >= 30) {
+				Kann.x += 20;
+				Kann.y += 12;
+				if (Kann.x >= 512) {
+					Kann.x = 512;
+					Kann.y = 232;
+				}
+			}
+
+			if (zennTimer >= 50) {
+				Zenn.x -= 20;
+				Zenn.y += 12;
+				if (Zenn.x <= 640) {
+					Zenn.x = 640;
+					Zenn.y = 232;
+				}
+			}
+
+			if (souTimer >= 70) {
+				Sou.x += 20;
+				Sou.y -= 12;
+				if (Sou.x >= 512) {
+					Sou.x = 512;
+					Sou.y = 360;
+				}
+			}
+
+			if (biTimer >= 90) {
+				Bi.x -= 20;
+				Bi.y -= 12;
+				if (Bi.x <= 640) {
+					Bi.x = 640;
+					Bi.y = 360;
+				}
 			}
 
 			break;
@@ -745,7 +822,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 
 		case GEAR:
-			
+
 			break;
 		case GAMEOVER:
 
@@ -867,6 +944,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 
 			}
+
 			if (RedRingTime == 30) {
 				ringRCount += 1;
 				isRedRing1Alive = 1;
@@ -955,17 +1033,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (spaceTimer <= kSpaceTimerLimit) {
 				Novice::DrawSprite(448, 250, space2Txt, 1, 1, 0, WHITE);
 			}
+
 			if (spaceTimer == kSpaceTimerLimit) {
 				spaceTimer = 0;
 			}
 			//自機
 			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
 
-			Novice::DrawSprite(448, 500, push, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(512, 512, push, 1.0f, 1.0f, 0.0f, WHITE);
 
 			break;
 		case GEAR:
+			Novice::DrawSprite(0, 0, gearBgTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
 			Novice::ScreenPrintf(50, 65, "%d", gameScene);
+
+		
+				Novice::DrawSprite(int(Kann.x), int(Kann.y), kann, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(Zenn.x), int(Zenn.y), zenn, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(Sou.x), int(Sou.y), sou, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(Bi.x), int(Bi.y), bi, 1.0f, 1.0f, 0.0f, WHITE);
+
 			break;
 
 		case RESULT:
