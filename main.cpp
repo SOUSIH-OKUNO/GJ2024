@@ -197,11 +197,13 @@ int parachuteResTimer = 0;
 int backpackResTimer = 0;
 int bootsResTimer = 0;
 int spaceTimer = 0;
+int pushTimer = 0;
 int gearTimer = 0;
 int kannTimer = 0;
 int zennTimer = 0;
 int souTimer = 0;
 int biTimer = 0;
+int overTimer = 0;
 
 
 //スコア管理
@@ -284,6 +286,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int gearBgTxt = Novice::LoadTexture("./Resources/images/gearBg.png");
 	int dangerTxt=Novice::LoadTexture("./Resources/images/danger.png");
 	int itaTxt=Novice::LoadTexture("./Resources/images/ita.png");
+	int gameOverTxt1= Novice::LoadTexture("./Resources/images/playerDieBlack.png");
+	int gameOverTxt2= Novice::LoadTexture("./Resources/images/playerDieYellow.png");
 
 
 	//効果音管理
@@ -341,6 +345,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const int kTitleTimerLimit = 80;
 	const int kIntroTimerLimit = 80;
 	const int kSpaceTimerLimit = 80;
+	const int kOverTimerLimit = 80;
 
 	//配列に格納
 	int ringOrange[2] = { ringOrange1,ringOrange2 };
@@ -624,8 +629,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//加速板
 
-			Novice::ScreenPrintf(50, 50, "%f", Ita.x);
-			Novice::ScreenPrintf(50, 65, "%f", Ita.y);
+			//Novice::ScreenPrintf(50, 50, "%f", Ita.x);
+			//Novice::ScreenPrintf(50, 65, "%f", Ita.y);
 			Ita.y -= itaSpeed;
 
 			itaDistance = Distance(Ita.x, Ita.y, player.position.x, player.position.y);
@@ -713,6 +718,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::StopAudio(playTitleHandle);
 
 			gameTimer++;
+			pushTimer++;
 
 			if (gameTimer % 100 == 0) {
 				playerProgressY += 9;
@@ -792,6 +798,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			if (keys[DIK_SPACE] && !preKeys[DIK_SPACE]) {
 				gameScene = GEAR;
+			}
+
+			if (pushTimer >= 300) {
+				pushTimer = 0;
+				gameScene = GAMEOVER;
 			}
 
 
@@ -1192,6 +1203,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Novice::DrawSprite(int(Zenn.x), int(Zenn.y), zenn, 1.0f, 1.0f, 0.0f, WHITE);
 			Novice::DrawSprite(int(Sou.x), int(Sou.y), sou, 1.0f, 1.0f, 0.0f, WHITE);
 			Novice::DrawSprite(int(Bi.x), int(Bi.y), bi, 1.0f, 1.0f, 0.0f, WHITE);
+
+			break;
+		case GAMEOVER:
+			overTimer++;
+			if (overTimer == kOverTimerLimit)
+			{
+				overTimer = 0;
+			}
+			if (overTimer <= kOverTimerLimit / 2) {
+				Novice::DrawSprite(0, 0, gameOverTxt1, 1, 1, 0, WHITE);
+			}
+			else if (overTimer <= kOverTimerLimit) {
+				Novice::DrawSprite(0, 0, gameOverTxt2, 1, 1, 0, WHITE);
+			}
+			if (overTimer == kOverTimerLimit) {
+				overTimer = 0;
+			}
+
 
 			break;
 
