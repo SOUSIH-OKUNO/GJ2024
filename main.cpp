@@ -41,6 +41,7 @@ struct Player {
 	Vector2 acceleration;
 	float radius;
 };
+
 struct Image {
 	Vector2 pos;
 };
@@ -71,10 +72,12 @@ Vector2 ringRED[2]{
 }
 
 };
+
 Vector2 ringYELLOW[2]{
 	{
 600.0f,3000.0f,50.0f}
 };
+
 Vector2 ringORANGE[2]{
 	{
 	1000.0f,3500.0f,50.0f}
@@ -113,6 +116,25 @@ Vector2 Bi{
 	0.0f,0.0f,64.0f
 };
 
+Vector2 DanderTop1{
+	0.0f,0.0f,64.0f
+};
+Vector2 DanderTop2{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 DanderBottom1{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 DanderBottom2{
+	0.0f,0.0f,64.0f
+};
+
+Vector2 Ita{
+	0.0f,0.0f,64.0f
+};
+
 //シーン管理
 enum Plaing {
 	TITLE,
@@ -127,8 +149,11 @@ enum Plaing {
 
 //各種速度
 int bgSpeed = 5;
-int ringSpeedX = 12;
+int ringSpeed = 12;
 int itemSpeed = 12;
+int itaSpeed = 12;
+int cloudSpeed = 10;
+int itaGetSpeed = 3;
 
 
 int redRingCurrentNums = 2;
@@ -140,6 +165,7 @@ float scrollX = 0.0f;
 bool IsParachuteGet = false;
 bool IsBackpackGet = false;
 bool IsBootsGet = false;
+bool IsItaHit = false;
 
 //各リングのヒット確認
 int isPlayerHitR = 0;
@@ -163,6 +189,7 @@ int ringRedAnimationIndex = 0;
 int ringOrangeAnimationIndex = 0;
 int ringYellowAnimationIndex = 0;
 int ringAnimationTimer = 0;
+int itaAnimationTimer = 0;
 
 //タイマー管理
 int gameTimer = 0;
@@ -219,12 +246,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int playerAnimationIndex = 0; //何個目の画像かを記憶する変数
 
 	//画像管理
-	int titleBlackHandle = Novice::LoadTexture("./Resources/images/DolphinJumpBlack.png");
-	int titleYellowHandle = Novice::LoadTexture("./Resources/images/DolphinJumpYellow.png");
+	int titleBlackHandle = Novice::LoadTexture("./Resources/images/skyfallBlack.png");
+	int titleYellowHandle = Novice::LoadTexture("./Resources/images/skyfallYellow.png");
 	int clearBlackHandle = Novice::LoadTexture("./Resources/images/clearBrack.png");
 	int clearYellowHandle = Novice::LoadTexture("./Resources/images/clearYellow.png");
-	int introBlackHandle = Novice::LoadTexture("./Resources/images/introkuro.png");
-	int introYellowHandle = Novice::LoadTexture("./Resources/images/introkiiro.png");
+	int introBlackHandle = Novice::LoadTexture("./Resources/images/setumeiBlack.png");
+	int introYellowHandle = Novice::LoadTexture("./Resources/images/setumeiYellow.png");
 	int sky1 = Novice::LoadTexture("./Resources/images/sky1.png");
 	int sky2 = Novice::LoadTexture("./Resources/images/sky2.png");
 	int ringYellow1 = Novice::LoadTexture("./Resources/images/ring_yellow_1.png");
@@ -236,7 +263,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int orangeRingSheet = Novice::LoadTexture("./Resources/images/ring_orange-sheet.png");
 	int redRingSheet = Novice::LoadTexture("./Resources/images/ring_red-sheet.png");
 	int yellowRingSheet = Novice::LoadTexture("./Resources/images/ring_yellow-sheet.png");
-	int progress = Novice::LoadTexture("./Resources/images/progress.png");
+	int progress = Novice::LoadTexture("./Resources/images/alt.png");
 	int startTxt = Novice::LoadTexture("./Resources/images/startTxt.png");
 	int cloudRight = Novice::LoadTexture("./Resources/images/cloudRight.png");
 	int cloudLeft = Novice::LoadTexture("./Resources/images/cloudLeft.png");
@@ -255,6 +282,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int sou = Novice::LoadTexture("./Resources/images/sou.png");
 	int bi = Novice::LoadTexture("./Resources/images/bi.png");
 	int gearBgTxt = Novice::LoadTexture("./Resources/images/gearBg.png");
+	int dangerTxt=Novice::LoadTexture("./Resources/images/danger.png");
+	int itaTxt=Novice::LoadTexture("./Resources/images/ita.png");
 
 
 	//効果音管理
@@ -294,7 +323,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int OrangeRingTime = 0;
 	int RedRingTime = 0;
 	int YellowRingTime = 0;
-	int playerProgressX = 990;
+	int playerProgressX = 1150;
 	int playerProgressY = 4;
 	int respawnRed = 0;
 	int respawnOrange = 0;
@@ -303,6 +332,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float parachuteDistance = 0.0f;
 	float backpackDistance = 0.0f;
 	float bootsDistance = 0.0f;
+	float itaDistance = 0.0f;
 
 	player.acceleration.y = -2.0f;
 
@@ -381,7 +411,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			respawnRed = 0;
 			respawnOrange = 0;
 			respawnYellow = 0;
-
+			ringSpeed = 12;
+			//雲
+			cloudSpeed = 12;
 			CloudRight.x = kWindowWidth - 540;
 			CloudRight.y = -500;
 			CloudLeft.x = 0;
@@ -393,12 +425,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Backpack.x = 600;
 			Boots.y = 4000;
 			Boots.x = 900;
+			itemSpeed = 12;
 
 
 			IsParachuteGet = false;
 			IsBackpackGet = false;
 			IsBootsGet = false;
 
+			//加速板
+			itaSpeed = 12;
+			itaGetSpeed = 1;
+			Ita.x = float(rand()%900+200);
+			Ita.y = 2000;
+
+			//ケースPUSH
+			DanderTop1.x = 0;
+			DanderTop2.x = -1280;
+			DanderTop1.y = 10;
+			DanderTop2.y = 10;
+			DanderBottom1.x = 0;
+			DanderBottom2.x = 1280;
+			DanderBottom1.y = 582;
+			DanderBottom2.y = 582;
+			
+
+			//ケースGEAR
 			Kann.x = -128;
 			Kann.y = -128;
 			Zenn.x = 1408;
@@ -407,6 +458,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Sou.y = 848;
 			Bi.x = 1408;
 			Bi.y = 848;
+			gearTimer = 0;
+			kannTimer = 0;
+			zennTimer = 0;
+			souTimer = 0;
+			biTimer = 0;
 
 
 			Novice::StopAudio(playClearHandle);
@@ -431,7 +487,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			gameTimer++;
 
 			if (gameTimer % 100 == 0) {
-				playerProgressX += 10;
+				playerProgressY += 9;
 			}
 
 			if (playerState == PlayerState::FLYINGRIGHT) {
@@ -441,29 +497,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				playerCurrentTexture = playerFlyingLeft[playerAnimationIndex];
 			}
 
-			/*if (keys[DIK_SPACE] && !preKeys[DIK_SPACE]) {
-				playJumpHandle = Novice::PlayAudio(jumpAudioHandle, false, 2.0f);
-				player.velocity.y = 30.0f;
-				playerState = State::JUMP;
-				isPlayerMoving = 1;
-				if (player.position.y >= 500) {
-					player.velocity.y = 0;
-				}
-			}*/
+		
 			///プレイヤーの移動
 			if (keys[DIK_LEFT]) {
 				player.position.x -= 15;
 				playerState = PlayerState::FLYINGLEFT;
 			}
-			if (player.position.x <= player.radius) {
-				player.position.x = player.radius;
+			if (player.position.x <= player.radius+200) {
+				player.position.x = player.radius+200;
 			}
 			if (keys[DIK_RIGHT]) {
 				playerState = PlayerState::FLYINGRIGHT;
 				player.position.x += 15;
 			}
-			if (player.position.x >= kWindowWidth - player.radius) {
-				player.position.x = kWindowWidth - player.radius;
+			if (player.position.x >= kWindowWidth - player.radius-100) {
+				player.position.x = kWindowWidth - player.radius-100;
 			}
 
 			freamCount++;
@@ -473,13 +521,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					playerAnimationIndex = 0; //画像が最後まで来たら一番最初に戻す
 				}
 			}
+
 			player.velocity.y += player.acceleration.y;
 			player.position.y += player.velocity.y;
 			if (player.position.y <= player.radius) {
 				player.position.y = player.radius;
 			}
 
-			screenY = (player.position.y - 300) * -1;
+			screenY = (player.position.y - 250) * -1;
 
 
 
@@ -493,6 +542,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (Parachute.y <= -100 && IsParachuteGet == false) {
 					parachuteResTimer++;
 					if (parachuteResTimer >= 300) {
+						Parachute.x= float(rand() % 900 + 200);
 						Parachute.y = 1000;
 						parachuteResTimer = 0;
 					}
@@ -501,6 +551,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (Backpack.y <= -100 && IsBackpackGet == false) {
 					backpackResTimer++;
 					if (backpackResTimer >= 300) {
+						Backpack.x= float(rand() % 900 + 200);
 						Backpack.y = 1000;
 						backpackResTimer = 0;
 					}
@@ -509,6 +560,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (Boots.y <= -100 && IsBootsGet == false) {
 					bootsResTimer++;
 					if (bootsResTimer >= 300) {
+						Boots.x= float(rand() % 900 + 200);
 						Boots.y = 1000;
 						bootsResTimer = 0;
 					}
@@ -570,6 +622,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ringYellowCurrentTexture = ringYellow[ringYellowAnimationIndex];
 			ringRedCurrentTexture = ringRed[ringRedAnimationIndex];
 
+			//加速板
+
+			Novice::ScreenPrintf(50, 50, "%f", Ita.x);
+			Novice::ScreenPrintf(50, 65, "%f", Ita.y);
+			Ita.y -= itaSpeed;
+
+			itaDistance = Distance(Ita.x, Ita.y, player.position.x, player.position.y);
+			if (itaDistance <= Ita.radius + player.radius) {
+				IsItaHit = true;
+				Ita.x = float(rand() % 900 + 200);
+				Ita.y = 3000;
+					
+			}
+
+			if (IsItaHit == true) {
+				ringSpeed += itaGetSpeed;
+				cloudSpeed += itaGetSpeed;
+				itemSpeed += itaGetSpeed;
+				itaSpeed += itaGetSpeed;
+				IsItaHit = false;
+			}
+
+			if (Ita.y <= -100) {
+				Ita.x = float(rand() % 900 + 200);
+				Ita.y = 2000;
+			}
+
+
 			//背景スクロール
 			background[0].pos.y -= bgSpeed;
 			if (background->pos.y <= -kWindowHeight) {
@@ -580,46 +660,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				background[1].pos.y = kWindowHeight;
 			}
 			//雲の移動処理
-			CloudRight.y -= 10;
+			CloudRight.y -= cloudSpeed;
 			if (CloudRight.y <= -500) {
 				CloudRight.y = 2000;
 			}
 
-			CloudLeft.y -= 10;
+			CloudLeft.y -= cloudSpeed;
 			if (CloudLeft.y <= -500) {
 				CloudLeft.y = 1000;
 			}
 
 			//画面は端まで行ったら戻る処理
 			if (gameTimer >= 240) {
-				ringRED[0].y -= ringSpeedX;
+				ringRED[0].y -= ringSpeed;
 
 				if (ringRED[0].y <= -100) {
-					ringRED[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-					ringRED[0].x = float(rand() % 1000 + 64);
+					ringRED[0].y = 2000;
+					ringRED[0].x = float(rand() % 900 + 200);
 					respawnRed += 1;
 				}
 
-				ringORANGE[0].y -= ringSpeedX;
+				ringORANGE[0].y -= ringSpeed;
 
 				if (ringORANGE[0].y <= -100) {
-					ringORANGE[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-					ringORANGE[0].x = float(rand() % 1000 + 64);
+					ringORANGE[0].y = 2000;
+					ringORANGE[0].x = float(rand() % 900 + 200);
 					respawnOrange += 1;
 				}
 
 
-				ringYELLOW[0].y -= ringSpeedX;
+				ringYELLOW[0].y -= ringSpeed;
 
 				if (ringYELLOW[0].y <= -100) {
-					ringYELLOW[0].y = kWindowHeight / 2 + kEnemyRespawnPosY;
-					ringYELLOW[0].x = float(rand() % 1000 + 64);
+					ringYELLOW[0].y =2000;
+					ringYELLOW[0].x = float(rand() % 900 + 200);
 					respawnYellow += 1;
 				}
 
 			}
 
-			if (gameTimer >= 1800) {
+			if (gameTimer >= 2400) {
 				if (IsParachuteGet == false || IsBackpackGet == false || IsBootsGet == false) {
 					gameScene = GAMEOVER;
 				}
@@ -635,7 +715,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			gameTimer++;
 
 			if (gameTimer % 100 == 0) {
-				playerProgressX += 10;
+				playerProgressY += 9;
 			}
 
 			if (playerState == PlayerState::FLYINGRIGHT) {
@@ -645,20 +725,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				playerCurrentTexture = playerFlyingLeft[playerAnimationIndex];
 			}
 
+			//DANGER
+			DanderTop1.x += 10;
+			DanderTop2.x += 10;
+			DanderBottom1.x -= 10;
+			DanderBottom2.x -= 10;
+			
+
+			if (DanderTop1.x >= 1280) {
+				DanderTop1.x = -1280;
+			}
+			if (DanderTop2.x >= 1280) {
+				DanderTop2.x = -1280;
+			}
+			if (DanderBottom1.x <= -1280) {
+				DanderBottom1.x = 1280;
+			}
+			if (DanderBottom2.x <= -1280) {
+				DanderBottom2.x = 1280;
+			}
+			
+			
+
 			///プレイヤーの移動
 			if (keys[DIK_LEFT]) {
 				player.position.x -= 15;
 				playerState = PlayerState::FLYINGLEFT;
 			}
-			if (player.position.x <= player.radius) {
-				player.position.x = player.radius;
+			if (player.position.x <= player.radius+200) {
+				player.position.x = player.radius+200;
 			}
 			if (keys[DIK_RIGHT]) {
 				playerState = PlayerState::FLYINGRIGHT;
 				player.position.x += 15;
 			}
-			if (player.position.x >= kWindowWidth - player.radius) {
-				player.position.x = kWindowWidth - player.radius - player.radius;
+			if (player.position.x >= kWindowWidth - player.radius-200) {
+				player.position.x = kWindowWidth - player.radius - 200;
 			}
 
 			freamCount++;
@@ -702,7 +804,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			souTimer++;
 			biTimer++;
 
-			if (gearTimer >= 300) {
+			if (gearTimer >= 240) {
 				gearTimer = 0;
 				gameScene = RESULT;
 			}
@@ -755,7 +857,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				gameTimer = resetTimer;
 				player.position.x = resetPosition;
 
-				playerProgressX = 990;
+				playerProgressX = 1150;
 				playerProgressY = 4;
 			}
 
@@ -773,7 +875,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				gameTimer = resetTimer;
 				player.position.x = resetPosition;
 
-				playerProgressX = 990;
+				playerProgressX = 1150;
 				playerProgressY = 4;	//プログレス初期化
 			}
 
@@ -826,6 +928,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		case GAMEOVER:
 
+
 			break;
 
 		case RESULT:
@@ -858,6 +961,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (titleTimer == kTitleTimerLimit) {
 				titleTimer = 0;
 			}
+
+
+
+
 			break;
 
 		case INTRO:
@@ -885,7 +992,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				Novice::DrawSprite(130, 250, startTxt, 1.6f, 1.6f, 0, WHITE);
 			}
 
-			Novice::DrawSprite(1000, 10, progress, 1, 1, 0.0f, WHITE);
+			Novice::DrawSprite(1150, 10, progress, 1, 1, 0.0f, WHITE);
 			Novice::DrawSprite(playerProgressX, playerProgressY, playerFlyLeft1, 0.5, 0.5, 0.0f, WHITE);
 
 
@@ -954,6 +1061,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				isYellowRing1Alive = 0;
 				isPlayerHitY = 1;
 			}
+
 			if (isYellowRing1Alive == 0) {
 
 				YellowRingTime++;
@@ -981,29 +1089,49 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (IsParachuteGet == false) {
 				Novice::DrawSprite(int(Parachute.x - Parachute.radius), int(Parachute.y - Parachute.radius), parachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
 				Novice::DrawSprite(50, 100, blackParachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawBox(50, 100, 128, 128, 0.0f,BLACK, kFillModeWireFrame);
 			}
 
-			else
+			else{
+				Novice::DrawBox(50, 100, 128, 128, 0.0f, WHITE, kFillModeSolid);
 				Novice::DrawSprite(50, 100, parachuteTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			}
+			
 
 			if (IsBackpackGet == false) {
 				Novice::DrawSprite(int(Backpack.x - Backpack.radius), int(Backpack.y - Backpack.radius), backpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
 				Novice::DrawSprite(50, 306, blackBackpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawBox(50, 306, 128, 128, 0.0f, BLACK, kFillModeWireFrame);
 
 			}
 
-			else
+			else{
+				Novice::DrawBox(50, 306, 128, 128, 0.0f, WHITE, kFillModeSolid);
 				Novice::DrawSprite(50, 306, backpackTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			}
+				
 
 			if (IsBootsGet == false) {
 				Novice::DrawSprite(int(Boots.x - Boots.radius), int(Boots.y - Boots.radius), bootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
-				Novice::DrawSprite(50, 562, blackBootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawSprite(50, 512, blackBootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+				Novice::DrawBox(50, 512, 128, 128, 0.0f, BLACK, kFillModeWireFrame);
 
 			}
 
-			else
-				Novice::DrawSprite(50, 562, bootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			else {
+				Novice::DrawBox(50, 512, 128, 128, 0.0f, WHITE, kFillModeSolid);
+				Novice::DrawSprite(50, 512, bootsTxt, 1.0f, 1.0f, 0.0f, WHITE);
 
+			}
+
+			//加速板
+			itaAnimationTimer++;
+			if (itaAnimationTimer >= 30) {
+				itaAnimationTimer = 0;
+			}
+
+			Novice::DrawSpriteRect(int(Ita.x-Ita.radius), int(Ita.y-Ita.radius), 128 * (itaAnimationTimer / 5),
+				0, 128, 128, itaTxt, 128.0f / 896.0f, 1.0f, 0.0f, 0xFFFFFFFF);
 
 
 			//自機
@@ -1021,6 +1149,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//背景描画
 			Novice::DrawSprite(int(background[0].pos.x), int(background[0].pos.y), sky1, 1, 1, 0, WHITE);
 			Novice::DrawSprite(int(background[1].pos.x), int(background[1].pos.y), sky2, 1, 1, 0, WHITE);
+
+			//自機
+			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
+
+			//DANGER
+			Novice::DrawSprite(int(DanderTop1.x),int( DanderTop1.y), dangerTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(DanderTop2.x),int( DanderTop2.y), dangerTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+			Novice::DrawSprite(int(DanderBottom1.x),int( DanderBottom1.y), dangerTxt, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(int(DanderBottom2.x),int( DanderBottom2.y), dangerTxt, 1.0f, 1.0f, 0.0f, WHITE);
+
+
 			//スペース
 			spaceTimer++;
 			if (spaceTimer == kSpaceTimerLimit)
@@ -1028,19 +1168,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				spaceTimer = 0;
 			}
 			if (spaceTimer <= kSpaceTimerLimit / 2) {
-				Novice::DrawSprite(448, 250, space1Txt, 1, 1, 0, WHITE);
+				Novice::DrawSprite(448, 200, space1Txt, 1, 1, 0, WHITE);
 			}
 			else if (spaceTimer <= kSpaceTimerLimit) {
-				Novice::DrawSprite(448, 250, space2Txt, 1, 1, 0, WHITE);
+				Novice::DrawSprite(448, 200, space2Txt, 1, 1, 0, WHITE);
 			}
 
 			if (spaceTimer == kSpaceTimerLimit) {
 				spaceTimer = 0;
 			}
-			//自機
-			Novice::DrawSprite(int(player.position.x) - int(player.radius), int(screenY) - int(player.radius), playerCurrentTexture, 1.5, 1.5, 0.0f, WHITE);
+		
 
-			Novice::DrawSprite(512, 512, push, 1.0f, 1.0f, 0.0f, WHITE);
+			Novice::DrawSprite(512+rand()%10-10, 452+rand() % 5 - 5, push, 1.0f, 1.0f, 0.0f, WHITE);
 
 			break;
 		case GEAR:
